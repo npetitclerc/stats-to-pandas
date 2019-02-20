@@ -13,6 +13,10 @@ from __future__ import print_function
 import pandas as pd
 import requests
 import ast
+import copy
+import operator
+import functools
+import math
 from pyjstat import pyjstat
 from collections import OrderedDict
 from ipywidgets import widgets
@@ -598,15 +602,51 @@ def read_all(table_id = None,
             table_id = table_id)
         
     query = full_json(full_url = full_url)
-    data = requests.post(full_url, json = query)
-    results = pyjstat.from_json_stat(data.json(object_pairs_hook=OrderedDict))
     
+    try: # Query limit is currently of 800,000 rows - if this fails then split the query
+        data = requests.post(full_url, json = query)
+        results = pyjstat.from_json_stat(data.json(object_pairs_hook=OrderedDict))[0]
+    except:
+        print("Simple query failed: Trying to split the query...")
+        results = batch_read(query)
+
+    return results
+
+def batch_read(query, max_rows=800000):
+    """
+    To stay within the query limit of 800,000 rows - this spit the query in multiple 
+    batches.
+    """
+    dimensions= [len(q['selection']['values']) for q in query['query']]
+    n_rows = functools.reduce(operator.mul, dimensions, 1)
+    n_batches = math.ceil(n_rows / (max_rows * 0.95)) # Use 95% of the maximum value to be safe
+    max_dim = max(dimensions)
+    i_max = dimensions.index(max(dimensions))
+    batch_size = int(max_dim / n_batches)
+    print("The table has: ", n_rows, "rows in total.")
+    print("This will require:", n_batches, "queries.")
+
+    for b in range(n_batches):
+        print("Doing query:", b)
+        min_range, max_range = b * batch_size, b * batch_size + batch_size 
+        query_ = copy.deepcopy(query)
+        query_['query'][i_max]['selection']['values'] = query['query'][i_max]['selection']['values'][min_range:max_range]
+        dimensions= [len(q['selection']['values']) for q in query_['query']]
+        data_ = requests.post(full_url, json = query_)
+        results_ = pyjstat.from_json_stat(data_.json(object_pairs_hook=OrderedDict))[0]
+        try:
+            results = results.append(results_).reset_index()
+        except:
+            results = copy.deepcopy(results_)
+    return results
+
+
     # maybe this need not be its own function, 
     # but an option in read_json? json = 'all'
     
     # other functions(options include: read_recent to get only the 
     # most recent values (defined as x), json = 'recent')
     
-    return results[0]
+
 
 
