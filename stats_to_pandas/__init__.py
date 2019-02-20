@@ -577,7 +577,8 @@ def full_json(table_id = None,
 def read_all(table_id = None, 
              language = 'en',
              base_url = 'http://data.ssb.no/api/v0', 
-             full_url = None):
+             full_url = None,
+             max_rows = 800000):
     """
     Returns a pandas dataframe with all values for all options 
     for the table specified by table_id
@@ -608,7 +609,7 @@ def read_all(table_id = None,
         results = pyjstat.from_json_stat(data.json(object_pairs_hook=OrderedDict))[0]
     except:
         print("Simple query failed: Trying to split the query...")
-        results = batch_read(query, full_url)
+        results = batch_read(query, full_url, max_rows=max_rows)
 
     return results
 
