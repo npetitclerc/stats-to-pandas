@@ -624,20 +624,17 @@ def batch_read(query, full_url, max_rows=800000):
     i_max = dimensions.index(max(dimensions))
     batch_size = int(max_dim / n_batches)
     print("The table has: ", n_rows, "rows in total.")
-    print("This will require:", n_batches, "queries.")
 
+    results = pd.DataFrame()
     for b in range(n_batches):
-        print("Doing query:", b)
+        print("Doing query:", b + 1, "/", n_batches)
         min_range, max_range = b * batch_size, b * batch_size + batch_size 
         query_ = copy.deepcopy(query)
         query_['query'][i_max]['selection']['values'] = query['query'][i_max]['selection']['values'][min_range:max_range]
         dimensions= [len(q['selection']['values']) for q in query_['query']]
         data_ = requests.post(full_url, json = query_)
         results_ = pyjstat.from_json_stat(data_.json(object_pairs_hook=OrderedDict))[0]
-        try:
-            results = results.append(results_).reset_index()
-        except:
-            results = copy.deepcopy(results_)
+        results = results.append(results_, ignore_index=True)
     return results
 
 
