@@ -601,7 +601,7 @@ def read_all(table_id = None,
             base_url = base_url,
             language = language, 
             table_id = table_id)
-        
+    print("Requesting: ", full_url)    
     query = full_json(full_url = full_url)
     
     try: # Query limit is currently of 800,000 rows - if this fails then split the query
