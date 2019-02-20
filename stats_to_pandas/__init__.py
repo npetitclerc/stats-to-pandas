@@ -608,11 +608,11 @@ def read_all(table_id = None,
         results = pyjstat.from_json_stat(data.json(object_pairs_hook=OrderedDict))[0]
     except:
         print("Simple query failed: Trying to split the query...")
-        results = batch_read(query)
+        results = batch_read(query, full_url)
 
     return results
 
-def batch_read(query, max_rows=800000):
+def batch_read(query, full_url, max_rows=800000):
     """
     To stay within the query limit of 800,000 rows - this spit the query in multiple 
     batches.
