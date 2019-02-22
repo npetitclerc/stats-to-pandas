@@ -625,19 +625,21 @@ def batch_read(query, full_url, max_rows=98360):
     n_batches = math.ceil(n_rows / (max_rows * 0.95)) # Use 95% of the maximum value to be safe
     max_dim = max(dimensions)
     i_max = dimensions.index(max(dimensions))
-    batch_size = math.ceil(max_dim / n_batches)
+    batch_size = int(max_dim / n_batches) # Taking int round down the batch size to be sure we don't exceed the limit
+    n_batches = math.ceil(max_dim / batch_size) # Recalculate the real number of batches required, because batch size has been round down
     print("The table has: ", n_rows, "rows in total.")
 
     results = pd.DataFrame()
     for b in range(n_batches):
         print("Doing query:", b + 1, "/", n_batches)
-        min_range, max_range = b * batch_size, b * batch_size + batch_size 
+        min_range, max_range = b * batch_size, b * batch_size + batch_size
         query_ = copy.deepcopy(query)
         query_['query'][i_max]['selection']['values'] = query['query'][i_max]['selection']['values'][min_range:max_range]
         dimensions= [len(q['selection']['values']) for q in query_['query']]
-        data_ = requests.post(full_url, json = query_)
-        results_ = pyjstat.from_json_stat(data_.json(object_pairs_hook=OrderedDict))[0]
-        results = results.append(results_, ignore_index=True)
+        if dimensions[i_max] > 0: # Avoid empty queries
+          data_ = requests.post(full_url, json = query_)
+          results_ = pyjstat.from_json_stat(data_.json(object_pairs_hook=OrderedDict))[0]
+          results = results.append(results_, ignore_index=True)
     return results
 
 
