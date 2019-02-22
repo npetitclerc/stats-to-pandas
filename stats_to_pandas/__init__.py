@@ -573,12 +573,14 @@ def full_json(table_id = None,
 
 
 #%%
-
+# Finnish query limit = 110000
+# Norway query limit = 800000
+# Sweden query limit = 98360
 def read_all(table_id = None, 
              language = 'en',
              base_url = 'http://data.ssb.no/api/v0', 
              full_url = None,
-             max_rows = 800000):
+             max_rows = 98360):
     """
     Returns a pandas dataframe with all values for all options 
     for the table specified by table_id
@@ -613,9 +615,9 @@ def read_all(table_id = None,
 
     return results
 
-def batch_read(query, full_url, max_rows=800000):
+def batch_read(query, full_url, max_rows=98360):
     """
-    To stay within the query limit of 800,000 rows - this spit the query in multiple 
+    To stay within the query limit for row numbers - this spit the query in multiple 
     batches.
     """
     dimensions= [len(q['selection']['values']) for q in query['query']]
@@ -623,7 +625,7 @@ def batch_read(query, full_url, max_rows=800000):
     n_batches = math.ceil(n_rows / (max_rows * 0.95)) # Use 95% of the maximum value to be safe
     max_dim = max(dimensions)
     i_max = dimensions.index(max(dimensions))
-    batch_size = int(max_dim / n_batches)
+    batch_size = math.ceil(max_dim / n_batches)
     print("The table has: ", n_rows, "rows in total.")
 
     results = pd.DataFrame()
