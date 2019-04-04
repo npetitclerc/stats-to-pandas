@@ -596,8 +596,6 @@ def read_all(table_id = None,
     df = read_all(table_id = '10714')
     
     """
-    
-     
     if full_url is None:        
         full_url = '{base_url}/{language}/table/{table_id}'.format(
             base_url = base_url,
@@ -612,13 +610,10 @@ def read_all(table_id = None,
         r = pyjstat.from_json_stat(dataj)[0]
         r_ = pyjstat.from_json_stat(dataj, naming='id')[0]
         r_.columns = ["_" + c for c in r_.columns]
-        result = pd.concat([r, r_], axis=1)
+        results = pd.concat([r, r_], axis=1)
     except:
         print("Simple query failed: Trying to split the query...")
         results = batch_read(query, full_url, max_rows=max_rows)
-
-    
-
     return results
 
 def batch_read(query, full_url, max_rows=98360):
