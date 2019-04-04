@@ -575,7 +575,7 @@ def full_json(table_id = None,
 #%%
 # Finnish query limit = 110000
 # Norway query limit = 800000
-# Sweden query limit = 98360
+# Sweden query limit = 110000
 def read_all(table_id = None, 
              language = 'en',
              base_url = 'http://data.ssb.no/api/v0', 
@@ -608,10 +608,16 @@ def read_all(table_id = None,
     
     try: # Query limit is currently of 800,000 rows - if this fails then split the query
         data = requests.post(full_url, json = query)
-        results = pyjstat.from_json_stat(data.json(object_pairs_hook=OrderedDict))[0]
+        dataj = data.json(object_pairs_hook=OrderedDict)
+        r = pyjstat.from_json_stat(dataj)[0]
+        r_ = pyjstat.from_json_stat(dataj, naming='id')[0]
+        r_.columns = ["_" + c for c in r_.columns]
+        result = pd.concat([r, r_], axis=1)
     except:
         print("Simple query failed: Trying to split the query...")
         results = batch_read(query, full_url, max_rows=max_rows)
+
+    
 
     return results
 
@@ -638,7 +644,11 @@ def batch_read(query, full_url, max_rows=98360):
         dimensions= [len(q['selection']['values']) for q in query_['query']]
         if dimensions[i_max] > 0: # Avoid empty queries
           data_ = requests.post(full_url, json = query_)
-          results_ = pyjstat.from_json_stat(data_.json(object_pairs_hook=OrderedDict))[0]
+          dataj_ = data_.json(object_pairs_hook=OrderedDict)
+          r = pyjstat.from_json_stat(dataj_)[0]
+          r_ = pyjstat.from_json_stat(dataj_, naming='id')[0]
+          r_.columns = ["_" + c for c in r_.columns]
+          results_ = pd.concat([r, r_], axis=1)
           results = results.append(results_, ignore_index=True)
     return results
 
